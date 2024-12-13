@@ -36,6 +36,9 @@ jobs:
             exit 0
           fi
           
+          # 只处理最近的 3 个 Release
+          RELEASES=$(echo "$RELEASES" | jq '.[:3]')
+          
           # 调试输出 RELEASES 的内容
           echo "RELEASES: $RELEASES"
           
