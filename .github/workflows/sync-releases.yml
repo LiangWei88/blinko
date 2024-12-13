@@ -23,6 +23,22 @@ jobs:
           GH_TOKEN=${{ secrets.GH_TOKEN }}
           RELEASES=$(curl -s -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$ORIGINAL_REPO/releases")
+          
+          # 检查 curl 请求是否成功
+          if [ -z "$RELEASES" ]; then
+            echo "Failed to fetch releases from $ORIGINAL_REPO"
+            exit 1
+          fi
+          
+          # 检查 RELEASES 是否为空
+          if [ "$(echo "$RELEASES" | jq '. | length')" -eq 0 ]; then
+            echo "No releases found in $ORIGINAL_REPO"
+            exit 0
+          fi
+          
+          # 调试输出 RELEASES 的内容
+          echo "RELEASES: $RELEASES"
+          
           echo "::set-output name=releases::$RELEASES"
 
       - name: Create Releases in Fork Repository
