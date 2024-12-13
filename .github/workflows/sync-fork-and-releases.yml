@@ -13,6 +13,11 @@ jobs:
       - name: Checkout Fork Repository
         uses: actions/checkout@v3
 
+      - name: Set Id
+        run: |
+            git config --global user.email "action@example.com"
+            git config --global user.name "Github Action"
+
       - name: Add Original Repository as Remote
         run: |
           git remote add upstream https://github.com/blinko-space/blinko.git  # 替换为原仓库的 URL
