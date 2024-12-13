@@ -35,5 +35,5 @@ jobs:
             BODY=$(echo "$release" | jq -r '.body')
             curl -X POST -H "Authorization: token $GH_TOKEN" \
               -d "{\"tag_name\":\"$TAG_NAME\",\"name\":\"$NAME\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":false}" \
-              "https://api.github.com/repos/LiangWei88/blinko/releases"  # 替换为你的 Fork 仓库的 owner/repo
+              "https://api.github.com/repos/LiangWei88/blinko/releases"
           done
