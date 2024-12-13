@@ -16,41 +16,24 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq  # 安装 jq 工具
 
-      - name: Fetch Original Repository Releases
-        id: fetch_releases
+      - name: Fetch and Create Releases
         run: |
           ORIGINAL_REPO="blinko-space/blinko"  # 替换为原仓库的 owner/repo
           GH_TOKEN=${{ secrets.GH_TOKEN }}
+
+          # 获取原仓库的最近 3 个 Release 信息
           RELEASES=$(curl -s -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$ORIGINAL_REPO/releases?per_page=3" \
             | jq '.[] | {id: .id, tag_name: .tag_name, name: .name}')
-          
-          # 检查 curl 请求是否成功
-          if [ -z "$RELEASES" ]; then
-            echo "Failed to fetch releases from $ORIGINAL_REPO"
-            exit 1
-          fi
-          
-          # 完整输出 RELEASES 的内容
-          echo "RELEASES: $RELEASES"
-          
-          # 检查 RELEASES 是否为空
-          if [ "$(echo "$RELEASES" | jq '. | length')" -eq 0 ]; then
-            echo "No releases found in $ORIGINAL_REPO"
-            exit 0
-          fi
-          
-          echo "::set-output name=releases::$RELEASES"
 
-      - name: Create Releases in Fork Repository
-        run: |
-          GH_TOKEN=${{ secrets.GH_TOKEN }}
-          RELEASES=${{ steps.fetch_releases.outputs.releases }}
+          # 处理每个 Release
           for release in $(echo "$RELEASES" | jq -c '.'); do
             TAG_NAME=$(echo "$release" | jq -r '.tag_name')
             NAME=$(echo "$release" | jq -r '.name')
             BODY="release $NAME, $TAG_NAME"
-            echo "Processing Release: $TAG_NAME - $NAME"
+
+            # 使用 jq -sR . 处理 body 中的 Markdown 内容
+            ESCAPED_BODY=$(echo "$BODY" | jq -sR .)
 
             # 创建 Release
             curl -X POST -H "Authorization: token $GH_TOKEN" \
