@@ -1,4 +1,4 @@
-name: Sync Fork Repository and Releases
+name: Sync Releases from Original Repository
 
 on:
   schedule:
@@ -6,37 +6,15 @@ on:
   workflow_dispatch:  # 允许手动触发
 
 jobs:
-  sync-fork:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Fork Repository
-        uses: actions/checkout@v3
-
-      - name: Set Id
-        run: |
-            git config --global user.email "action@example.com"
-            git config --global user.name "Github Action"
-
-      - name: Add Original Repository as Remote
-        run: |
-          git remote add upstream https://github.com/blinko-space/blinko.git  # 替换为原仓库的 URL
-          git fetch upstream
-
-      - name: Sync with Original Repository
-        run: |
-          git fetch upstream
-          git checkout main  # 替换为原仓库的主分支名称
-          git rebase upstream/main
-          git push origin main
-
   sync-releases:
     runs-on: ubuntu-latest
-    needs: sync-fork  # 等待代码同步完成后再同步 Release
 
     steps:
       - name: Checkout Fork Repository
         uses: actions/checkout@v3
+
+      - name: Install jq
+        run: sudo apt-get install -y jq  # 安装 jq 工具
 
       - name: Fetch Original Repository Releases
         id: fetch_releases
