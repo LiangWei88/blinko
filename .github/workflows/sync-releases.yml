@@ -22,7 +22,8 @@ jobs:
           ORIGINAL_REPO="blinko-space/blinko"  # 替换为原仓库的 owner/repo
           GH_TOKEN=${{ secrets.GH_TOKEN }}
           RELEASES=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/$ORIGINAL_REPO/releases")
+            "https://api.github.com/repos/$ORIGINAL_REPO/releases?per_page=3" \
+            | jq '.[] | {id: .id, tag_name: .tag_name, name: .name}')
           
           # 检查 curl 请求是否成功
           if [ -z "$RELEASES" ]; then
@@ -30,17 +31,14 @@ jobs:
             exit 1
           fi
           
+          # 完整输出 RELEASES 的内容
+          echo "RELEASES: $RELEASES"
+          
           # 检查 RELEASES 是否为空
           if [ "$(echo "$RELEASES" | jq '. | length')" -eq 0 ]; then
             echo "No releases found in $ORIGINAL_REPO"
             exit 0
           fi
-          
-          # 只处理最近的 3 个 Release
-          RELEASES=$(echo "$RELEASES" | jq '.[:3]')
-          
-          # 调试输出 RELEASES 的内容
-          echo "RELEASES: $RELEASES"
           
           echo "::set-output name=releases::$RELEASES"
 
@@ -48,11 +46,14 @@ jobs:
         run: |
           GH_TOKEN=${{ secrets.GH_TOKEN }}
           RELEASES=${{ steps.fetch_releases.outputs.releases }}
-          for release in $(echo "$RELEASES" | jq -c '.[]'); do
+          for release in $(echo "$RELEASES" | jq -c '.'); do
             TAG_NAME=$(echo "$release" | jq -r '.tag_name')
             NAME=$(echo "$release" | jq -r '.name')
-            BODY=$(echo "$release" | jq -r '.body')
+            BODY="release $NAME, $TAG_NAME"
+            echo "Processing Release: $TAG_NAME - $NAME"
+
+            # 创建 Release
             curl -X POST -H "Authorization: token $GH_TOKEN" \
-              -d "{\"tag_name\":\"$TAG_NAME\",\"name\":\"$NAME\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":false}" \
+              -d "{\"tag_name\":\"$TAG_NAME\",\"name\":\"$NAME\",\"body\":$ESCAPED_BODY,\"draft\":false,\"prerelease\":false}" \
               "https://api.github.com/repos/LiangWei88/blinko/releases"
           done
